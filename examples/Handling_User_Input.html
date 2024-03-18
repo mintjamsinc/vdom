@@ -1,0 +1,47 @@
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Handling User Input</title>
+		<style>
+			button, a {
+				display: block;
+				margin-bottom: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<h1>{{ message }}</h1>
+
+			<button @click="reverseMessage">Reverse Message</button>
+
+			<button @click="message += '!'">Append "!"</button>
+
+			<a href="." @click.prevent="notify">
+				A link with e.preventDefault()
+			</a>
+		</div>
+
+		<script type="module">
+			import { VDOM } from './vdom.min.js';
+
+			const App = {
+				data: function() {
+					return {
+						message: 'Hello World!',
+					};
+				},
+				methods: {
+					reverseMessage: function() {
+						this.message = this.message.split('').reverse().join('');
+					},
+					notify: function() {
+						alert('navigation was prevented.');
+					},
+				},
+			};
+
+			VDOM.createApp('#app', App);
+		</script>
+	</body>
+</html>
