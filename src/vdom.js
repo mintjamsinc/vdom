@@ -736,6 +736,15 @@ class VNode {
 
 	unbind() {
 		let vNode = this;
+		if (vNode.isComponent) {
+			return;
+		}
+		if (vNode.$nodeType != Node.ELEMENT_NODE) {
+			return;
+		}
+		if (vNode.$node.nodeName.toLowerCase() == 'template') {
+			return;
+		}
 
 		vNode.on('unbind');
 
@@ -815,6 +824,12 @@ class VNode {
 		let vApp = this.$vApp;
 		let vNode = this;
 
+		if (vNode.parent && vNode.parent.$bindings && vNode.$bindings) {
+			for (const [name, value] of Object.entries(vNode.parent.$bindings)) {
+				vNode.$bindings[name] = value;
+			}
+		}
+
 		if (vNode.isComponent) {
 			if (vNode.$isActivated) {
 				return;
@@ -875,6 +890,10 @@ class VNode {
 		if (vNode.$isReactive) {
 			if (vNode.$nodeType == Node.ELEMENT_NODE && !vNode.isTemplateElement) {
 				for (const vName of Object.keys(vNode.$attributes)) {
+					if (vName == ':key') {
+						continue;
+					}
+
 					if (vName.startsWith(':')) {
 						let name = vName.substring(1);
 						let newValue = vApp.eval(vNode.$attributes[vName], vNode.$bindings);
@@ -1089,50 +1108,56 @@ class VNode {
 					vRenderContext.ifStatus.clear();
 				}
 
-				let vNodes = vNode.$childVNodeMap[key];
-				if (vNodes != undefined) {
+				let reuseVNodes = vNode.$childVNodeMap[key];
+				if (reuseVNodes != undefined) {
 					childVNodeMap[key] = [];
-					for (const vNode of vNodes) {
-						childVNodes.push(vNode);
-						childVNodeMap[key].push(vNode);
+					for (const reuseVNode of reuseVNodes) {
+						childVNodes.push(reuseVNode);
+						childVNodeMap[key].push(reuseVNode);
+
+						// Update
+						for (const [name, value] of Object.entries(bindings)) {
+							reuseVNode.$bindings[name] = value;
+						}
 
 						// Rendering
-						vNode.render(vRenderContext);
+						reuseVNode.render(vRenderContext);
 					}
 					delete vNode.$childVNodeMap[key];
 					return;
 				}
 
-				let templateNodes = vNode.createTemplateNode();
-				if (templateNodes instanceof DocumentFragment) {
+				let newNodes = vNode.createTemplateNode();
+				if (newNodes instanceof DocumentFragment) {
 					let l = [];
-					for (const node of templateNodes.childNodes) {
+					for (const node of newNodes.childNodes) {
 						l.push(node);
 					}
-					templateNodes = l;
+					newNodes = l;
 				} else {
-					templateNodes = [templateNodes];
+					newNodes = [newNodes];
 				}
 				childVNodeMap[key] = [];
-				for (const templateNode of templateNodes) {
-					vNode.$node.parentNode.insertBefore(templateNode, vNode.$node);
-					let templateVNode = new VNode({
-						node: templateNode,
+				for (const newNode of newNodes) {
+					vNode.$node.parentNode.insertBefore(newNode, vNode.$node);
+					newNode.setAttribute(':key', vNode.$attributes[':key']);
+					let newVNode = new VNode({
+						node: newNode,
 						parentVNode: vNode.$parentVNode,
 						vApp: vNode.$vApp,
 						bindings: bindings,
 					});
-					childVNodes.push(templateVNode);
-					childVNodeMap[key].push(templateVNode);
+					childVNodes.push(newVNode);
+					childVNodeMap[key].push(newVNode);
 
 					// Initial rendering
-					templateVNode.render(vRenderContext);
+					newVNode.render(vRenderContext);
 				}
 			});
 
-			for (const childVNodes of Object.values(vNode.$childVNodeMap)) {
-				for (const childVNode of childVNodes) {
-					childVNode.remove();
+			for (const unnecessaryVNodes of Object.values(vNode.$childVNodeMap)) {
+				for (const unnecessaryVNode of unnecessaryVNodes) {
+					unnecessaryVNode.remove();
 				}
 			}
 
@@ -1188,8 +1213,8 @@ class VNode {
 
 			if (!isActive) {
 				if (vNode.$childVNodes.length > 0) {
-					for (const templateVNode of vNode.$childVNodes) {
-						templateVNode.remove();
+					for (const unnecessaryVNode of vNode.$childVNodes) {
+						unnecessaryVNode.remove();
 					}
 
 					vNode.$childVNodes = [];
@@ -1197,32 +1222,32 @@ class VNode {
 			} else {
 				if (vNode.$childVNodes.length > 0) {
 					// Rendering
-					for (const childVNode of vNode.$childVNodes) {
-						childVNode.render(vRenderContext);
+					for (const reuseVNode of vNode.$childVNodes) {
+						reuseVNode.render(vRenderContext);
 					}
 				} else {
-					let templateNodes = vNode.createTemplateNode();
-					if (templateNodes instanceof DocumentFragment) {
+					let newNodes = vNode.createTemplateNode();
+					if (newNodes instanceof DocumentFragment) {
 						let l = [];
-						for (const node of templateNodes.childNodes) {
+						for (const node of newNodes.childNodes) {
 							l.push(node);
 						}
-						templateNodes = l;
+						newNodes = l;
 					} else {
-						templateNodes = [templateNodes];
+						newNodes = [newNodes];
 					}
-					for (const templateNode of templateNodes) {
-						vNode.$node.parentNode.insertBefore(templateNode, vNode.$node);
-						let templateVNode = new VNode({
-							node: templateNode,
+					for (const newNode of newNodes) {
+						vNode.$node.parentNode.insertBefore(newNode, vNode.$node);
+						let newVNode = new VNode({
+							node: newNode,
 							parentVNode: vNode.$parentVNode,
 							vApp: vNode.$vApp,
 							bindings: vNode.$bindings,
 						});
-						vNode.$childVNodes.push(templateVNode);
+						vNode.$childVNodes.push(newVNode);
 
 						// Initial rendering
-						templateVNode.render(vRenderContext);
+						newVNode.render(vRenderContext);
 					}
 				}
 			}
