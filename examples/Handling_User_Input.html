@@ -17,6 +17,9 @@
 
 			<button @click="message += '!'">Append "!"</button>
 
+			<!-- With the .prevent modifier, vdom calls the
+				 event.eventDefault method before invoking the event
+				 handler. -->
 			<a href="." @click.prevent="notify">
 				A link with e.preventDefault()
 			</a>
@@ -26,16 +29,16 @@
 			import { VDOM } from './vdom.min.js';
 
 			const App = {
-				data: function() {
+				data() {
 					return {
 						message: 'Hello World!',
 					};
 				},
 				methods: {
-					reverseMessage: function() {
+					reverseMessage() {
 						this.message = this.message.split('').reverse().join('');
 					},
-					notify: function() {
+					notify() {
 						alert('navigation was prevented.');
 					},
 				},
