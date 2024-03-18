@@ -1506,7 +1506,7 @@ class VApp {
 						if (ignores.indexOf(names[i]) != -1) {
 							continue;
 						}
-						if (typeof arguments[i] != 'function') {
+						if (typeof arguments[i] == 'function') {
 							continue;
 						}
 
