@@ -523,17 +523,17 @@ class VNode {
 			}
 
 			if (!isTemplate) {
-				for (const attr of node.attributes) {
-					vNode.$attributes[attr.name] = attr.value;
+				for (const name of node.getAttributeNames()) {
+					vNode.$attributes[name] = node.getAttribute(name);
 
-					if (attr.name.startsWith(':')) {
+					if (name.startsWith(':')) {
 						vNode.$isReactive = true;
-						vNode.$node.removeAttribute(attr.name);
+						vNode.$node.removeAttribute(name);
 						continue;
 					}
 
-					if (attr.name.startsWith('@')) {
-						vNode.$node.removeAttribute(attr.name);
+					if (name.startsWith('@')) {
+						vNode.$node.removeAttribute(name);
 						continue;
 					}
 				}
