@@ -302,6 +302,9 @@ class VForExpression {
 		}
 
 		for (const name of variables.concat([indexVariable])) {
+			if (name == undefined) {
+				continue;
+			}
 			if (name.split(/\s/).length > 1) {
 				throw new Error('Syntax error: ' + vForExpression.$source);
 			}
@@ -1177,7 +1180,9 @@ class VNode {
 				childVNodeMap[key] = [];
 				for (const newNode of newNodes) {
 					vNode.$node.parentNode.insertBefore(newNode, vNode.$node);
-					newNode.setAttribute(':key', vNode.$attributes[':key']);
+					if (newNode.nodeType == Node.ELEMENT_NODE) {
+						newNode.setAttribute(':key', vNode.$attributes[':key']);
+					}
 					let newVNode = new VNode({
 						node: newNode,
 						parentVNode: vNode.$parentVNode,
@@ -1582,7 +1587,7 @@ class VApp {
 			let source = '"use strict";';
 			source += 'return function(' + names.join(',') + ') {';
 			if (updatable) {
-				source += expression + ';';
+				source += '{' + expression + '}';
 				source += '$update(' + names.join(',') + ');';
 			} else {
 				source += 'return (' + expression + ');';
