@@ -247,6 +247,10 @@ class VForExpression {
 			s = v;
 		}
 
+		const c = expression.split(/\s/);
+		if (c.length < 2 || ['of', 'in'].indexOf(c[0]) == -1) {
+			throw new Error('Syntax error: ' + vForExpression.$source);
+		}
 		expression = ' ' + expression;
 
 		let indexVariable;
