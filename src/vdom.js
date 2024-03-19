@@ -451,7 +451,10 @@ class VEventHandler {
 				return;
 			}
 
-			let result = vApp.$instance.methods[vEventHandler.$expression];
+			let result;
+			if (typeof vApp.$instance.methods == 'object') {
+				result = vApp.$instance.methods[vEventHandler.$expression];
+			}
 			if (typeof result != 'function') {
 				result = vApp.eval(vEventHandler.$expression, bindings, true);
 			}
@@ -1544,7 +1547,7 @@ class VApp {
 				values.push(value);
 			}
 
-			if (vApp.$instance.methods != undefined) {
+			if (typeof vApp.$instance.methods == 'object') {
 				for (const [name, value] of Object.entries(vApp.$instance.methods)) {
 					if (names.indexOf(name) != -1) {
 						continue;
