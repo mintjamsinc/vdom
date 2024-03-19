@@ -202,110 +202,139 @@ class Values {
 }
 
 class VForExpression {
-	constructor(expression) {
-		expression = Values.toString(expression, '').trim();
-		if (expression == '') {
+	constructor(vNode, source) {
+		let vForExpression = this;
+		vForExpression.$vNode = vNode;
+		source = Values.toString(source, '').trim();
+		if (source == '') {
 			throw new Error('The expression must be specified.');
 		}
-		this.$expression = expression;
+		vForExpression.$source = source;
 
-		let e = expression;
-
-		if (e.startsWith('(')) {
-			let i = e.indexOf(')');
-			this.$nameExp = e.substring(0, i + 1);
-			e = e.substring(i + 1).trim();
-		} else if (e.startsWith('{')) {
-			let i = e.indexOf('}');
-			this.$nameExp = e.substring(0, i + 1);
-			e = e.substring(i + 1).trim();
+		let s = source;
+		let expression;
+		if (s.startsWith('(')) {
+			let v = s.match(/\(.*\)/);
+			if (!v) {
+				throw new Error('Syntax error: ' + vForExpression.$source);
+			}
+			v = v[0];
+			expression = s.substring(v.length).trim();
+			s = v;
+		} else if (s.startsWith('{')) {
+			let v = s.match(/\{.*\}/);
+			if (!v) {
+				throw new Error('Syntax error: ' + vForExpression.$source);
+			}
+			v = v[0];
+			expression = s.substring(v.length).trim();
+			s = v;
+		} else if (s.startsWith('[')) {
+			let v = s.match(/\[.*\]/);
+			if (!v) {
+				throw new Error('Syntax error: ' + vForExpression.$source);
+			}
+			v = v[0];
+			expression = s.substring(v.length).trim();
+			s = v;
 		} else {
-			e = e.split(/\s/);
-			this.$nameExp = e[0];
-			e.splice(0, 1);
-			e = e.join(' ');
+			let v = s.split(/\s/);
+			if (v.length < 3) {
+				throw new Error('Syntax error: ' + vForExpression.$source);
+			}
+			v = v[0];
+			expression = s.substring(v.length).trim();
+			s = v;
 		}
 
-		if (!e.startsWith('in')) {
-			throw new Error('Syntax error: ' + this.$expression);
-		}
+		expression = ' ' + expression;
 
-		this.$arrayExp = e.substring(2).trim();
-	}
-
-	get arrayExpression() {
-		return this.$arrayExp;
-	}
-
-	checkVarName(name) {
-		if (name.split(/\s/).length > 1) {
-			throw new Error('Syntax error: ' + this.$expression);
-		}
-		return name;
-	}
-
-	execute(items, func) {
-		let isArray = Array.isArray(items);
-		if (!isArray) {
-			items = Object.entries(items);
-		}
-
-		for (let i = 0; i < items.length; i++) {
-			let bindings = {};
-			let e = this.$nameExp;
-			if (e.startsWith('(')) {
-				e = e.substring(1, e.length - 1).split(/\s*,\s*/);
-				if (e.length == 0) {
-					throw new Error('Syntax error: ' + this.$expression);
+		let indexVariable;
+		let variables = [];
+		if (s.startsWith('(')) {
+			s = s.substring(1, s.length - 1).trim();
+			let v;
+			if (s.startsWith('{')) {
+				v = s.match(/\{.*\}/);
+				if (!v) {
+					throw new Error('Syntax error: ' + vForExpression.$source);
 				}
-
-				if (isArray) {
-					if (e[0].startsWith('{')) {
-						if (!e[0].endsWith('}')) {
-							throw new Error('Syntax error: ' + this.$expression);
-						}
-
-						for (let p of e[0].substring(1, e[0].length - 1).split(/\s*,\s*/)) {
-							bindings[this.checkVarName(p)] = items[i][p];
-						}
-					} else {
-						bindings[this.checkVarName(e[0])] = items[i];
-					}
-					if (e.length > 1) {
-						bindings[this.checkVarName(e[1])] = i;
-					}
-				} else {
-					if (e[0].startsWith('{')) {
-						throw new Error('Syntax error: ' + this.$expression);
-					}
-
-					bindings[this.checkVarName(e[0])] = items[i][1];
-					if (e.length > 1) {
-						bindings[this.checkVarName(e[1])] = items[i][0];
-					}
-					if (e.length > 2) {
-						bindings[this.checkVarName(e[2])] = i;
-					}
+			} else if (s.startsWith('[')) {
+				v = s.match(/\[.*\]/);
+				if (!v) {
+					throw new Error('Syntax error: ' + vForExpression.$source);
 				}
-			} else if (e.startsWith('{')) {
-				e = e.substring(1, e.length - 1).split(/\s*,\s*/);
-				if (e.length == 0) {
-					throw new Error('Syntax error: ' + this.$expression);
-				}
-
-				if (isArray) {
-					for (let p of e[0]) {
-						bindings[this.checkVarName(p)] = items[i][p];
+			}
+			if (v) {
+				expression = v + expression;
+				variables.push(...v.substring(1, v.length - 1).trim().split(/\s*,\s*/));
+				let i = s.substring(v.length).trim();
+				if (i.length > 0) {
+					if (i == ',' || !i.startsWith(',')) {
+						throw new Error('Syntax error: ' + vForExpression.$source);
 					}
-				} else {
-					throw new Error('Syntax error: ' + this.$expression);
+					indexVariable = i.substring(1).trim();
 				}
 			} else {
-				bindings[this.checkVarName(e)] = items[i];
+				v = s.split(/\s*,\s*/);
+				if (v.length == 0) {
+					throw new Error('Syntax error: ' + vForExpression.$source);
+				}
+				expression = v[0] + expression;
+				variables.push(v[0]);
+				if (v.length > 1) {
+					indexVariable = v[1];
+				}
 			}
-
-			func(bindings);
+		} else if (s.startsWith('{')) {
+			expression = s + expression;
+			variables.push(...s.substring(1, s.length - 1).trim().split(/\s*,\s*/));
+		} else if (s.startsWith('[')) {
+			expression = s + expression;
+			variables.push(...s.substring(1, s.length - 1).trim().split(/\s*,\s*/));
+		} else {
+			expression = s + expression;
+			variables.push(s);
 		}
+
+		for (const name of variables.concat([indexVariable])) {
+			if (name.split(/\s/).length > 1) {
+				throw new Error('Syntax error: ' + vForExpression.$source);
+			}
+		}
+
+		vForExpression.$expression = expression;
+		vForExpression.$variables = variables;
+		vForExpression.$indexVariable = indexVariable;
+	}
+
+	execute(func) {
+		let vApp = this.$vNode.$vApp;
+		let vNode = this.$vNode;
+		let vForExpression = this;
+
+		let source = 'function() {';
+		source += 'let $index = -1;';
+		source += 'for (const ' + vForExpression.$expression + ') {';
+		source += '$index++;';
+		source += 'const $bindings = {};';
+		for (const name of vForExpression.$variables) {
+			source += '$bindings[\'' + name + '\'] = ' + name + ';';
+		}
+		source += '$bindings[\'' + vForExpression.$indexVariable + '\'] = $index;';
+		source += '$function($bindings);';
+		source += '}';
+		source += '}()';
+
+		let bindings = {};
+		if (vNode.$bindings) {
+			for (const [name, value] of Object.entries(vNode.$bindings)) {
+				bindings[name] = value;
+			}
+		}
+		bindings['$function'] = func;
+
+		vApp.eval(source, bindings);
 	}
 }
 
@@ -1039,12 +1068,10 @@ class VNode {
 		let vKey = vNode.$attributes[':key'];
 
 		if (vFor != undefined) {
-			let vForExp = new VForExpression(vFor);
-			let items = vApp.eval(vForExp.arrayExpression, vNode.$bindings);
-
+			let vForExp = new VForExpression(vNode, vFor);
 			let childVNodes = [];
 			let childVNodeMap = {};
-			vForExp.execute(items, function(bindings) {
+			vForExp.execute(function(bindings) {
 				let key = Values.toString(vApp.eval(vKey, bindings));
 				if (key == undefined) {
 					vApp.log.error('Invalid key expression.');
@@ -1551,7 +1578,7 @@ class VApp {
 			}
 			source += 'return $return;';
 			source += '}';
-			return Function(source).call({}).apply(vApp, values);
+			return Function(source).call().apply(vApp, values);
 		} catch (ex) {
 			vApp.log.error(ex);
 		}
