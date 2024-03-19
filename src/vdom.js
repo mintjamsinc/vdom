@@ -317,7 +317,7 @@ class VForExpression {
 		let vNode = this.$vNode;
 		let vForExpression = this;
 
-		let source = 'function() {';
+		let source = '(function() {';
 		source += 'let $index = -1;';
 		source += 'for (const ' + vForExpression.$expression + ') {';
 		source += '$index++;';
@@ -328,7 +328,7 @@ class VForExpression {
 		source += '$bindings[\'' + vForExpression.$indexVariable + '\'] = $index;';
 		source += '$function($bindings);';
 		source += '}';
-		source += '}()';
+		source += '})()';
 
 		let bindings = {};
 		if (vNode.$bindings) {
@@ -451,20 +451,23 @@ class VEventHandler {
 				return;
 			}
 
-			let result = vApp.eval(vEventHandler.$expression, bindings, true);
+			let result = vApp.$instance.methods[vEventHandler.$expression];
+			if (typeof result != 'function') {
+				result = vApp.eval(vEventHandler.$expression, bindings, true);
+			}
 			if (typeof result == 'function') {
 				try {
 					result = result.apply(vApp, [event, vNode]);
-				} catch (ignore) {}
+				} catch (ex) {
+					vApp.log.error(ex);
+				}
 			}
-
 			if (result instanceof Promise) {
 				result.then(function() {
 					vApp.commit();
 				});
-			} else {
-				vApp.commit();
 			}
+			vApp.commit();
 		};
 		vEventHandler.$vNode.$node.addEventListener(vEventHandler.type, vEventHandler.$eventListener);
 
@@ -686,7 +689,7 @@ class VNode {
 	findParent(nodeName) {
 		let vNode = this;
 		nodeName = nodeName.toLowerCase();
-		for (const parentVNode = vNode.$parentVNode; parentVNode; parentVNode = parentVNode.$parentVNode) {
+		for (let parentVNode = vNode.$parentVNode; parentVNode; parentVNode = parentVNode.$parentVNode) {
 			if (parentVNode.$nodeName.toLowerCase() == nodeName) {
 				return parentVNode;
 			}
@@ -699,7 +702,7 @@ class VNode {
 		let vNode = this;
 		for (const vName of Object.keys(vNode.$attributes)) {
 			if (vName == '@' + name) {
-				let result = vApp.eval(vNode.$attributes[vName], vNode.$bindings);
+				let result = vApp.eval(vNode.$attributes[vName], vNode.$bindings, true);
 				if (result instanceof Promise) {
 					result.then(function() {
 						vApp.commit();
@@ -1569,18 +1572,18 @@ class VApp {
 						vApp[names[i]] = arguments[i];
 					}
 				};
-
 				names.push('$update');
 				values.push($update);
 			}
 
 			let source = '"use strict";';
 			source += 'return function(' + names.join(',') + ') {';
-			source += 'const $return = (' + expression + ');';
 			if (updatable) {
+				source += expression + ';';
 				source += '$update(' + names.join(',') + ');';
+			} else {
+				source += 'return (' + expression + ');';
 			}
-			source += 'return $return;';
 			source += '}';
 			return Function(source).call().apply(vApp, values);
 		} catch (ex) {
