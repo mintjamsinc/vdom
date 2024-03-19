@@ -44,6 +44,31 @@ let delay = function(func, ms) {
 	}
 };
 
+class ScriptValidator {
+	validate(source) {
+		source = Values.toString(source, '').trim();
+		if (source.length == 0) {
+			return;
+		}
+
+		let scope = 0;
+		for (let i = 0; i < source.length; i++) {
+			const c = source.charAt(i);
+			if (c == '{') {
+				scope++;
+			} else if (c == '}') {
+				scope--;
+			}
+			if (scope < 0) {
+				throw new Error('Syntax error: ' + source);
+			}
+		}
+		if (scope != 0) {
+			throw new Error('Syntax error: ' + source);
+		}
+	}
+}
+
 class Values {
 	static isNumber(value) {
 		return (typeof value == 'number');
@@ -1529,6 +1554,8 @@ class VApp {
 	eval(expression, bindings, updatable) {
 		let vApp = this;
 		try {
+			new ScriptValidator().validate(expression);
+
 			let names = [];
 			let values = [];
 
