@@ -12,7 +12,7 @@
 					We can also use values of bindings inherited from a parent
 					node.
 				-->
-				<li v-component="todoItem" v-properties="{ todo: item }" v-for="item of groceryList" :key="item.id"></li>
+				<li v-component.static="todoItem" v-properties="{ todo: item }" v-for="item of groceryList" :key="item.id"></li>
 			</ol>
 		</div>
 
