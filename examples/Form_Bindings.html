@@ -1,0 +1,75 @@
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Form Bindings</title>
+	</head>
+	<body>
+		<div id="app">
+			<h2>Text Input</h2>
+			<input v-model="text"> {{ text }}
+
+			<!-- The v-model value of a checkbox is always an array. -->
+			<h2>Checkbox</h2>
+			<input type="checkbox" id="checkbox" value="on" v-model="checked">
+			<label for="checkbox">Checked: {{ (checked.indexOf('on') != -1) }}</label>
+
+			<!-- multiple checkboxes can bind to the same array v-model
+				 value. -->
+			<h2>Multi Checkbox</h2>
+			<input type="checkbox" id="jack" value="Jack" v-model="checkedNames">
+			<label for="jack">Jack</label>
+			<input type="checkbox" id="john" value="John" v-model="checkedNames">
+			<label for="john">John</label>
+			<input type="checkbox" id="mike" value="Mike" v-model="checkedNames">
+			<label for="mike">Mike</label>
+			<p>Checked names:
+			<pre>{{ checkedNames }}</pre>
+			</p>
+
+			<h2>Radio</h2>
+			<input type="radio" id="one" value="One" v-model="picked">
+			<label for="one">One</label>
+			<br>
+			<input type="radio" id="two" value="Two" v-model="picked">
+			<label for="two">Two</label>
+			<br>
+			<span>Picked: {{ picked }}</span>
+
+			<h2>Select</h2>
+			<select v-model="selected">
+				<option disabled value="">Please select one</option>
+				<option>A</option>
+				<option>B</option>
+				<option>C</option>
+			</select>
+			<span>Selected: {{ selected }}</span>
+
+			<h2>Multi Select</h2>
+			<select v-model="multiSelected" multiple style="width:100px">
+				<option>A</option>
+				<option>B</option>
+				<option>C</option>
+			</select>
+			<span>Selected: {{ multiSelected }}</span>
+		</div>
+
+		<script type="module">
+			import { VDOM } from './vdom.min.js';
+
+			const App = {
+				data() {
+					return {
+						text: 'Edit me',
+						checked: ['on'],
+						checkedNames: ['Jack'],
+						picked: 'One',
+						selected: 'A',
+						multiSelected: ['A'],
+					};
+				},
+			};
+
+			VDOM.createApp('#app', App);
+		</script>
+	</body>
+</html>
