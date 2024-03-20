@@ -353,7 +353,9 @@ class VForExpression {
 		for (const name of vForExpression.$variables) {
 			source += '$bindings[\'' + name + '\'] = ' + name + ';';
 		}
-		source += '$bindings[\'' + vForExpression.$indexVariable + '\'] = $index;';
+		if (vForExpression.$indexVariable != undefined) {
+			source += '$bindings[\'' + vForExpression.$indexVariable + '\'] = $index;';
+		}
 		source += '$function($bindings);';
 		source += '}';
 		source += '})()';
@@ -527,21 +529,8 @@ class VNode {
 		vNode.$vApp = vApp;
 		vNode.$bindings = bindings ? Values.clone(bindings) : {};
 
-		if (node.nodeType == Node.ELEMENT_NODE) {
-			vNode.$nodeName = node.nodeName;
-
-			if (node.getAttribute('v-component') != undefined) {
-				const id = Values.toString(node.getAttribute('v-component'), '').trim();
-				if (!id || !VDOM.hasComponent(id)) {
-					throw Error('The specified component cannot be found: ' + id);
-				}
-
-				vNode.$isComponent = true;
-				vNode.$componentID = id;
-				vNode.$isActivated = false;
-				return;
-			}
-
+		if (vNode.$node.nodeType == Node.ELEMENT_NODE) {
+			vNode.$nodeName = vNode.$node.nodeName;
 			vNode.$attributes = {};
 			vNode.$childVNodes = [];
 			vNode.$childVNodeMap = {};
@@ -549,9 +538,9 @@ class VNode {
 			vNode.$isBound = false;
 			let isTemplate = false;
 
-			if (node.getAttribute('v-for') != undefined) {
+			if (vNode.$node.getAttribute('v-for') != undefined) {
 				const name = 'v-for';
-				const value = node.getAttribute(name);
+				const value = vNode.$node.getAttribute(name);
 				vNode.$attributes[name] = value;
 				vNode.$isReactive = true;
 				vNode.$node.removeAttribute(name);
@@ -574,7 +563,7 @@ class VNode {
 			{
 				const vAttrs = [];
 				for (const name of ['v-if', 'v-else-if', 'v-else']) {
-					const value = node.getAttribute(name);
+					const value = vNode.$node.getAttribute(name);
 					if (value != undefined) {
 						vAttrs.push(name);
 						if (vAttrs.length > 1) {
@@ -590,8 +579,8 @@ class VNode {
 			}
 
 			if (!isTemplate) {
-				for (const name of node.getAttributeNames()) {
-					vNode.$attributes[name] = node.getAttribute(name);
+				for (const name of vNode.$node.getAttributeNames()) {
+					vNode.$attributes[name] = vNode.$node.getAttribute(name);
 
 					if (name.startsWith(':')) {
 						vNode.$isReactive = true;
@@ -617,6 +606,19 @@ class VNode {
 			}
 
 			if (!isTemplate) {
+				if (vNode.$node.getAttribute('v-component') != undefined) {
+					const id = Values.toString(vNode.$node.getAttribute('v-component'), '').trim();
+					if (!id || !VDOM.hasComponent(id)) {
+						throw Error('The specified component cannot be found: ' + id);
+					}
+
+					vNode.$isComponent = true;
+					vNode.$componentID = id;
+					vNode.$isActivated = false;
+				}
+			}
+
+			if (!isTemplate) {
 				for (const childNode of vNode.$node.childNodes) {
 					vNode.$childVNodes.push(new VNode({
 						node: childNode,
@@ -626,13 +628,13 @@ class VNode {
 					}));
 				}
 			}
-		} else if (node.nodeType == Node.TEXT_NODE) {
-			vNode.$nodeValue = node.nodeValue;
-			if (/{{.*?}}/.test(node.nodeValue)) {
+		} else if (vNode.$node.nodeType == Node.TEXT_NODE) {
+			vNode.$nodeValue = vNode.$node.nodeValue;
+			if (/{{.*?}}/.test(vNode.$node.nodeValue)) {
 				vNode.$isReactive = true;
 			}
 		} else {
-			vNode.$nodeValue = node.nodeValue;
+			vNode.$nodeValue = vNode.$node.nodeValue;
 		}
 	}
 
@@ -899,6 +901,7 @@ class VNode {
 
 		if (vNode.isComponent) {
 			if (vNode.$isActivated) {
+				vNode.$componentVApp.commit(vNode.$bindings);
 				return;
 			}
 
@@ -913,12 +916,9 @@ class VNode {
 			}
 
 			let props = {};
-			for (const [name, value] of Object.entries(vNode.$bindings)) {
-				props[name] = value;
-			}
 			let vProperties = Values.toString(vNode.$node.getAttribute('v-properties'), '').trim();
 			if (vProperties) {
-				p = vApp.eval(vProperties, vNode.$bindings);
+				let p = vApp.eval(vProperties, vNode.$bindings);
 				if (typeof p == 'object') {
 					for (const [name, value] of Object.entries(p)) {
 						props[name] = value;
@@ -937,9 +937,9 @@ class VNode {
 				vNode.$node = childNode;
 				vNode.$nodeType = childNode.nodeType;
 				let instance = vComponent.createInstance(props);
-				vNode.$vApp = new VApp(vNode.$node, instance);
+				vNode.$componentVApp = new VApp(vNode.$node, instance);
 				vNode.$isActivated = true;
-				vNode.$vApp.init();
+				vNode.$componentVApp.init(vNode.$bindings);
 				break;
 			}
 			return;
@@ -1456,7 +1456,7 @@ class VApp {
 		return vApp.$log;
 	}
 
-	init() {
+	init(bindings) {
 		let vApp = this;
 		if (vApp.$instance.methods != undefined) {
 			if (typeof vApp.$instance.methods != 'object') {
@@ -1490,6 +1490,12 @@ class VApp {
 				node: vApp.$node,
 				vApp: vApp,
 			});
+
+			if (typeof bindings == 'object') {
+				for (const [name, value] of Object.entries(bindings)) {
+					vApp.$vNode.$bindings[name] = value;
+				}
+			}
 
 			vApp.compute();
 			vApp.render();
@@ -1627,8 +1633,15 @@ class VApp {
 		return undefined;
 	}
 
-	commit() {
+	commit(bindings) {
 		let vApp = this;
+
+		if (typeof bindings == 'object') {
+			for (const [name, value] of Object.entries(bindings)) {
+				vApp.$vNode.$bindings[name] = value;
+			}
+		}
+
 		vApp.compute();
 		vApp.render();
 	}
