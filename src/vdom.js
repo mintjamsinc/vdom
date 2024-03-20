@@ -138,6 +138,10 @@ class Values {
 		return defaultValue;
 	}
 
+	static trim(value) {
+		return Values.toString(value, '').trim();
+	}
+
 	static toDate(value, defaultValue) {
 		if (value == undefined) {
 			return defaultValue;
@@ -592,6 +596,12 @@ class VNode {
 						vNode.$node.removeAttribute(name);
 						continue;
 					}
+
+					if (name == 'v-component' || name.startsWith('v-component.')) {
+						vNode.$isComponent = true;
+						vNode.$isActivated = false;
+						continue;
+					}
 				}
 			} else {
 				if (vNode.$node.nodeName.toLowerCase() != 'template') {
@@ -602,19 +612,6 @@ class VNode {
 					vNode.$node.parentNode.removeChild(vNode.$node);
 					vNode.$node = templateNode;
 					vNode.$nodeType = templateNode.nodeType;
-				}
-			}
-
-			if (!isTemplate) {
-				if (vNode.$node.getAttribute('v-component') != undefined) {
-					const id = Values.toString(vNode.$node.getAttribute('v-component'), '').trim();
-					if (!id || !VDOM.hasComponent(id)) {
-						throw Error('The specified component cannot be found: ' + id);
-					}
-
-					vNode.$isComponent = true;
-					vNode.$componentID = id;
-					vNode.$isActivated = false;
 				}
 			}
 
@@ -905,24 +902,59 @@ class VNode {
 				return;
 			}
 
+			let vComponentAttr, vComponentValue;
+			let vTemplateAttr, vTemplateValue;
+			let vPropertiesAttr, vPropertiesValue;
+			for (const [name, value] of Object.entries(vNode.$attributes)) {
+				if (name == 'v-component' || name.startsWith('v-component.')) {
+					vComponentAttr = Values.trim(name).split('.');
+					vComponentValue = Values.trim(value);
+					continue;
+				}
+				if (name == 'v-template' || name.startsWith('v-template.')) {
+					vTemplateAttr = Values.trim(name).split('.');
+					vTemplateValue = Values.trim(value);
+					continue;
+				}
+				if (name == 'v-properties' || name.startsWith('v-properties.')) {
+					vPropertiesAttr = Values.trim(name).split('.');
+					vPropertiesValue = Values.trim(value);
+					continue;
+				}
+			}
+
+			// id
+			if (vComponentAttr.indexOf('static') != -1) {
+				vNode.$componentID = vComponentValue;
+			} else {
+				vNode.$componentID = vApp.eval(vComponentValue, vNode.$bindings);
+			}
+
 			const vComponent = VDOM.getComponent(vNode.$componentID);
 
-			vNode.$templateID = Values.toString(vNode.$node.getAttribute('v-template'), '').trim();
-			if (!vNode.$templateID) {
-				vNode.$templateID = vComponent.templateID;
+			// template
+			if (vTemplateAttr != undefined) {
+				if (vTemplateAttr.indexOf('static') != -1) {
+					vNode.$templateID = vTemplateValue;
+				} else {
+					vNode.$templateID = vApp.eval(vTemplateValue, vNode.$bindings);
+				}
 			}
-			if (!vNode.$templateID) {
+			if (vNode.$templateID == undefined) {
+				let v = Values.trim(vComponent.templateID);
+				if (v.length > 0) {
+					vNode.$templateID = vComponent.templateID;
+				}
+			}
+			if (vNode.$templateID == undefined) {
 				vNode.$templateID = vComponent.id;
 			}
 
 			let props = {};
-			let vProperties = Values.toString(vNode.$node.getAttribute('v-properties'), '').trim();
-			if (vProperties) {
-				let p = vApp.eval(vProperties, vNode.$bindings);
+			if (vPropertiesValue != undefined) {
+				let p = vApp.eval(vPropertiesValue, vNode.$bindings);
 				if (typeof p == 'object') {
-					for (const [name, value] of Object.entries(p)) {
-						props[name] = value;
-					}
+					props = p;
 				}
 			}
 
