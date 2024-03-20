@@ -1,0 +1,53 @@
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Simple Component</title>
+	</head>
+	<body>
+		<div id="app">
+			<ol>
+				<!--
+					The value of v-properties is passed to the createInstance
+					method when the component is created.
+					We can also use values of bindings inherited from a parent
+					node.
+				-->
+				<li v-component="todoItem" v-properties="{ todo: item }" v-for="item of groceryList" :key="item.id"></li>
+			</ol>
+		</div>
+
+		<script type="module">
+			import { VDOM } from './vdom.min.js';
+
+			const App = {
+				data() {
+					return {
+						groceryList: [
+							{id: 0, text: 'Vegetables'},
+							{id: 1, text: 'Cheese'},
+							{id: 2, text: 'Whatever else humans are supposed to eat'},
+						],
+					};
+				},
+			};
+
+			const TodoItem = {
+				id: 'todoItem',
+				createInstance(props) {
+					return {
+						data() {
+							return props;
+						},
+					};
+				},
+			};
+
+			VDOM.addComponent(TodoItem, TodoItem);
+			VDOM.createApp('#app', App);
+		</script>
+
+		<template id="todoItem">
+			<li>(Property) {{ todo.text }}<br>(Binding) {{ item.text }}</li>
+		</template>
+	</body>
+</html>
