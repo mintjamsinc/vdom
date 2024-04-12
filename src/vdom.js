@@ -205,6 +205,37 @@ class Values {
 	}
 }
 
+class VModels {
+	static toValue(vNode, v) {
+		if (vNode.vModelModifiers.indexOf('number') != -1) {
+			return Values.toNumber(v);
+		}
+		if (vNode.vModelModifiers.indexOf('date') != -1 || vNode.vModelModifiers.indexOf('datetime') != -1) {
+			return Values.toDate(v);
+		}
+		if (vNode.vModelModifiers.indexOf('time') != -1) {
+			return Values.toDate('1970-01-01T' + v);
+		}
+		if (vNode.vModelModifiers.indexOf('boolean') != -1) {
+			return Values.toBoolean(v);
+		}
+		return Values.toString(v);
+	}
+
+	static toString(vNode, v) {
+		if (vNode.vModelModifiers.indexOf('date') != -1) {
+			return Values.toISODateString(v);
+		}
+		if (vNode.vModelModifiers.indexOf('time') != -1) {
+			return Values.toISOTimeString(v);
+		}
+		if (vNode.vModelModifiers.indexOf('datetime') != -1) {
+			return Values.toISODateTimeString(v);
+		}
+		return Values.toString(v);
+	}
+}
+
 class VForExpression {
 	constructor(vNode, source) {
 		let vForExpression = this;
@@ -661,15 +692,35 @@ class VNode {
 		}
 
 		if (vNode.$vModel == undefined) {
-			let vModel = Values.toString(vNode.$attributes['v-model'], '');
-
-			vNode.$vModel = vModel.trim();
+			let vModelAttr = Values.trim(vNode.$attributes['v-model']).split('.');
+			if (vModelAttr.length > 0) {
+				vNode.$vModel = vModelAttr[0];
+			} else {
+				vNode.$vModel = '';
+			}
 		}
 
 		if (vNode.$vModel == '') {
 			return undefined;
 		}
 		return vNode.$vModel;
+	}
+
+	get vModelModifiers() {
+		let vNode = this;
+		if (vNode.$nodeType != Node.ELEMENT_NODE) {
+			return undefined;
+		}
+
+		if (vNode.$vModelModifiers == undefined) {
+			let vModelAttr = Values.trim(vNode.$attributes['v-model']).split('.');
+			if (vModelAttr.length > 0) {
+				vModelAttr.shift();
+			}
+			vNode.$vModelModifiers = vModelAttr;
+		}
+
+		return vNode.$vModelModifiers;
 	}
 
 	get hasVModel() {
@@ -818,12 +869,14 @@ class VNode {
 
 		if (vNode.$nodeName.toLowerCase() == 'input') {
 			let type = Values.toString(vNode.$node.type, '').toLowerCase();
-			if (['checkbox'].indexOf(type) !=  -1) {
+			if (['checkbox'].indexOf(type) != -1) {
 				newValue = Values.clone(oldValue);
-				if (!Array.isArray(newValue)) {
-					newValue = Values.toString(newValue, '').trim().split(/\s*,\s*/);
+				if (newValue == undefined) {
+					newValue = [];
+				} else if (!Array.isArray(newValue)) {
+					newValue = [newValue];
 				}
-				let value = Values.toString(vNode.$node.value);
+				let value = VModels.toValue(vNode, vNode.$node.value);
 				let i = newValue.indexOf(value);
 				if (vNode.$node.checked) {
 					if (i == -1) {
@@ -835,21 +888,21 @@ class VNode {
 					}
 				}
 			} else {
-				newValue = Values.toString(vNode.$node.value);
+				newValue = VModels.toValue(vNode, vNode.$node.value);
 			}
 		} else if (vNode.$nodeName.toLowerCase() == 'textarea') {
-			newValue = Values.toString(vNode.$node.value);
+			newValue = VModels.toValue(vNode, vNode.$node.value);
 		} else if (vNode.$nodeName.toLowerCase() == 'select') {
 			if (vNode.$node.multiple) {
 				newValue = [];
 				for (const el of vNode.$node.selectedOptions) {
-					let value = Values.toString(el.value, '');
+					let value = VModels.toValue(vNode, el.value);
 					if (newValue.indexOf(value) == -1) {
 						newValue.push(value);
 					}
 				}
 			} else {
-				newValue = Values.toString(vNode.$node.value);
+				newValue = VModels.toValue(vNode, vNode.$node.value);
 			}
 		}
 
@@ -1039,28 +1092,30 @@ class VNode {
 			if (vNode.hasVModel || vNode.$nodeName.toLowerCase() == 'option') {
 				if (vNode.$nodeName.toLowerCase() == 'input') {
 					let type = Values.toString(vNode.$node.type, '').toLowerCase();
-					if (['checkbox'].indexOf(type) !=  -1) {
+					if (['checkbox'].indexOf(type) != -1) {
 						let values = vApp[vNode.vModel];
-						if (!Array.isArray(values)) {
-							values = Values.toString(values, '').trim().split(/\s*,\s*/);
+						if (values == undefined) {
+							values = [];
+						} else if (!Array.isArray(values)) {
+							values = [values];
 						}
-						let newValue = (values.indexOf(vNode.$node.value) !=  -1);
+						let newValue = (values.indexOf(VModels.toValue(vNode, vNode.$node.value)) != -1);
 						if (vNode.$node.checked != newValue) {
 							vNode.$node.checked = newValue;
 						}
-					} else if (['radio'].indexOf(type) !=  -1) {
-						let newValue = (Values.toString(vApp[vNode.vModel], '') == Values.toString(vNode.$node.value));
+					} else if (['radio'].indexOf(type) != -1) {
+						let newValue = (vApp[vNode.vModel] == VModels.toValue(vNode, vNode.$node.value));
 						if (vNode.$node.checked != newValue) {
 							vNode.$node.checked = newValue;
 						}
 					} else {
-						let newValue = Values.toString(vApp[vNode.vModel], '');
+						let newValue = VModels.toString(vNode, vApp[vNode.vModel]);
 						if (vNode.$node.value != newValue) {
 							vNode.$node.value = newValue;
 						}
 					}
 				} else if (vNode.$nodeName.toLowerCase() == 'textarea') {
-					let newValue = Values.toString(vApp[vNode.vModel], '');
+					let newValue = VModels.toString(vNode, vApp[vNode.vModel]);
 					if (vNode.$node.value != newValue) {
 						vNode.$node.value = newValue;
 					}
@@ -1071,15 +1126,17 @@ class VNode {
 					if (selectVNode && selectVNode.hasVModel) {
 						if (selectVNode.$node.multiple) {
 							let values = vApp[selectVNode.vModel];
-							if (!Array.isArray(values)) {
-								values = Values.toString(values, '').trim().split(/\s*,\s*/);
+							if (values == undefined) {
+								values = [];
+							} else if (!Array.isArray(values)) {
+								values = [values];
 							}
-							let newValue = (values.indexOf(Values.toString(vNode.$node.value)) != -1);
+							let newValue = (values.indexOf(VModels.toValue(vNode, vNode.$node.value)) != -1);
 							if (vNode.$node.selected != newValue) {
 								vNode.$node.selected = newValue;
 							}
 						} else {
-							let newValue = (Values.toString(vApp[selectVNode.vModel], '') == Values.toString(vNode.$node.value));
+							let newValue = (vApp[selectVNode.vModel] == VModels.toValue(vNode, vNode.$node.value));
 							if (vNode.$node.selected != newValue) {
 								vNode.$node.selected = newValue;
 							}
