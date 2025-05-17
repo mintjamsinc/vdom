@@ -758,7 +758,25 @@ class VNode {
 		let vNode = this;
 		for (const vName of Object.keys(vNode.$attributes)) {
 			if (vName == '@' + name) {
-				let result = vApp.eval(vNode.$attributes[vName], vNode.$bindings, true);
+				let expression = vNode.$attributes[vName];
+				if (expression == '') {
+					return;
+				}
+
+				let result;
+				if (typeof vApp.$instance.methods == 'object') {
+					result = vApp.$instance.methods[expression];
+				}
+				if (typeof result != 'function') {
+					result = vApp.eval(expression, vNode.$bindings, true);
+				}
+				if (typeof result == 'function') {
+					try {
+						result = result.apply(vApp, [vNode]);
+					} catch (ex) {
+						vApp.log.error(ex);
+					}
+				}
 				if (result instanceof Promise) {
 					result.then(function() {
 						vApp.commit();
@@ -1679,16 +1697,28 @@ class VApp {
 				values.push($update);
 			}
 
-			let source = '"use strict";';
-			source += 'return function(' + names.join(',') + ') {';
+			let source = '';
 			if (updatable) {
 				source += '{' + expression + '}';
 				source += '$update(' + names.join(',') + ');';
 			} else {
 				source += 'return (' + expression + ');';
 			}
-			source += '}';
-			return Function(source).call().apply(vApp, values);
+
+			let fn;
+			try {
+				fn = new Function(...[...names, source]);
+			} catch (ex) {
+				vApp.log.error("Failed to compile script: " + ex.message);
+				throw ex;
+			}
+
+			try {
+				return fn.apply(vApp, values);
+			} catch (ex) {
+				vApp.log.error("Script execution failed: " + ex.message);
+				throw ex;
+			}
 		} catch (ex) {
 			vApp.log.error(ex);
 		}
