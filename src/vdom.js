@@ -452,8 +452,7 @@ class VEventHandler {
 	constructor(type, expression) {
 		let vEventHandler = this;
 		let typeAndModifiers = type.split('.');
-		vEventHandler.$type = typeAndModifiers[0];
-		typeAndModifiers.splice(0, 1);
+		vEventHandler.$type = typeAndModifiers.shift();
 		vEventHandler.$modifiers = typeAndModifiers;
 		vEventHandler.$expression = Values.toString(expression, '').trim();
 		if (vEventHandler.$type == '') {
@@ -495,7 +494,7 @@ class VEventHandler {
 					event.stopPropagation();
 				} else if (modifier == 'prevent') {
 					event.preventDefault();
-				} else if (modifier.toLowerCase() != event.key.toLowerCase()) {
+				} else if (event.key && event.key.toLowerCase() != modifier.toLowerCase()) {
 					return;
 				}
 			}
