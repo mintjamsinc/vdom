@@ -495,6 +495,8 @@ class VEventHandler {
 					event.stopPropagation();
 				} else if (modifier == 'prevent') {
 					event.preventDefault();
+				} else if (modifier.toLowerCase() != event.key.toLowerCase()) {
+					return;
 				}
 			}
 
