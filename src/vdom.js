@@ -44,6 +44,17 @@ let delay = function(func, ms) {
 	}
 };
 
+let getValueByPath = function(obj, path) {
+	return path.split('.').reduce((o, key) => o?.[key], obj);
+};
+
+let setValueByPath = function(obj, path, value) {
+	const keys = path.split('.');
+	const lastKey = keys.pop();
+	const target = keys.reduce((o, key) => o[key], obj);
+	target[lastKey] = value;
+};
+
 class Values {
 	static isNumber(value) {
 		return (typeof value == 'number');
@@ -685,6 +696,25 @@ class VNode {
 		return vNode.$isBound;
 	}
 
+	get vModelKey() {
+		let vNode = this;
+		if (vNode.$nodeType != Node.ELEMENT_NODE) {
+			return undefined;
+		}
+
+		for (const key in vNode.$attributes) {
+			if (key.startsWith('v-model.')) {
+				return key.trim();
+			}
+		}
+
+		if ('v-model' in vNode.$attributes) {
+			return 'v-model';
+		}
+
+		return undefined;
+	};
+
 	get vModel() {
 		let vNode = this;
 		if (vNode.$nodeType != Node.ELEMENT_NODE) {
@@ -692,9 +722,8 @@ class VNode {
 		}
 
 		if (vNode.$vModel == undefined) {
-			let vModelAttr = Values.trim(vNode.$attributes['v-model']).split('.');
-			if (vModelAttr.length > 0) {
-				vNode.$vModel = vModelAttr[0];
+			if (vNode.vModelKey) {
+				vNode.$vModel = vNode.$attributes[vNode.vModelKey];
 			} else {
 				vNode.$vModel = '';
 			}
@@ -713,7 +742,7 @@ class VNode {
 		}
 
 		if (vNode.$vModelModifiers == undefined) {
-			let vModelAttr = Values.trim(vNode.$attributes['v-model']).split('.');
+			let vModelAttr = vNode.vModelKey ? vNode.vModelKey.split('.') : [];
 			if (vModelAttr.length > 0) {
 				vModelAttr.shift();
 			}
@@ -882,7 +911,7 @@ class VNode {
 			return;
 		}
 
-		let oldValue = vApp[vNode.vModel];
+		let oldValue = getValueByPath(vApp, vNode.vModel);
 		let newValue = undefined;
 
 		if (vNode.$nodeName.toLowerCase() == 'input') {
@@ -925,7 +954,7 @@ class VNode {
 		}
 
 		if (JSON.stringify(oldValue) != JSON.stringify(newValue)) {
-			vApp[vNode.vModel] = newValue;
+			setValueByPath(vApp, vNode.vModel, newValue);
 			return true;
 		}
 
@@ -1111,7 +1140,7 @@ class VNode {
 				if (vNode.$nodeName.toLowerCase() == 'input') {
 					let type = Values.toString(vNode.$node.type, '').toLowerCase();
 					if (['checkbox'].indexOf(type) != -1) {
-						let values = vApp[vNode.vModel];
+						let values = getValueByPath(vApp, vNode.vModel);
 						if (values == undefined) {
 							values = [];
 						} else if (!Array.isArray(values)) {
@@ -1122,18 +1151,18 @@ class VNode {
 							vNode.$node.checked = newValue;
 						}
 					} else if (['radio'].indexOf(type) != -1) {
-						let newValue = (vApp[vNode.vModel] == VModels.toValue(vNode, vNode.$node.value));
+						let newValue = (getValueByPath(vApp, vNode.vModel) == VModels.toValue(vNode, vNode.$node.value));
 						if (vNode.$node.checked != newValue) {
 							vNode.$node.checked = newValue;
 						}
 					} else {
-						let newValue = VModels.toString(vNode, vApp[vNode.vModel]);
+						let newValue = VModels.toString(vNode, getValueByPath(vApp, vNode.vModel));
 						if (vNode.$node.value != newValue) {
 							vNode.$node.value = newValue;
 						}
 					}
 				} else if (vNode.$nodeName.toLowerCase() == 'textarea') {
-					let newValue = VModels.toString(vNode, vApp[vNode.vModel]);
+					let newValue = VModels.toString(vNode, getValueByPath(vApp, vNode.vModel));
 					if (vNode.$node.value != newValue) {
 						vNode.$node.value = newValue;
 					}
