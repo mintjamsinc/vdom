@@ -482,11 +482,12 @@ class VEventHandler {
 	register(vNode) {
 		let vEventHandler = this;
 		vEventHandler.$vNode = vNode;
-		vEventHandler.$eventListener = function(event) {
+		vEventHandler.$eventListener = async function(event) {
 			let vApp = vEventHandler.$vNode.$vApp;
 			let bindings = {
 				event: event,
 				vNode: vNode,
+				...vNode.$bindings,
 			};
 
 			for (const modifier of vEventHandler.$modifiers) {
@@ -1705,7 +1706,7 @@ class VApp {
 					}
 
 					names.push(name);
-					values.push(value);
+					values.push(value.bind(vApp));
 				}
 			}
 
@@ -1729,8 +1730,9 @@ class VApp {
 
 			let source = '';
 			if (updatable) {
-				source += '{' + expression + '}';
-				source += '$update(' + names.join(',') + ');';
+				source += 'return (' + expression + ');';
+//				source += '{' + expression + '}';
+//				source += '{$update(' + names.join(',') + ')}';
 			} else {
 				source += 'return (' + expression + ');';
 			}
