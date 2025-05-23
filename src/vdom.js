@@ -909,7 +909,7 @@ class VNode {
 	update() {
 		let vApp = this.$vApp;
 		let vNode = this;
-		if (!vNode.hasVModel) {
+		if (!vNode.$node || !vNode.hasVModel) {
 			return;
 		}
 
