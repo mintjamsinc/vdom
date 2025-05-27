@@ -9,7 +9,7 @@
 		</div>
 
 		<script type="module">
-			import { VDOM } from './vdom.min.js';
+			import { VDOM } from './vdom.js';
 
 			// The root component "App", we typically import the root
 			// component from another file.
@@ -19,6 +19,7 @@
 						message: 'Hello World!',
 					};
 				},
+				logLevel: 'debug',
 			};
 
 			VDOM.createApp('#app', App);

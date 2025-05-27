@@ -103,7 +103,7 @@ class Values {
 		if (typeof value == 'string') {
 			try {
 				return (JSON.parse(value.toLowerCase()) == true);
-			} catch (ex) {}
+			} catch (ex) { }
 		}
 
 		return defaultValue;
@@ -119,7 +119,7 @@ class Values {
 
 		try {
 			return value.toString();
-		} catch (ex) {}
+		} catch (ex) { }
 
 		return defaultValue;
 	}
@@ -138,7 +138,7 @@ class Values {
 
 		try {
 			return new Date(value);
-		} catch (ex) {}
+		} catch (ex) { }
 
 		return defaultValue;
 	}
@@ -166,9 +166,9 @@ class Values {
 			}
 
 			return '' + value.getFullYear() + '-' +
-					('0' + (value.getMonth() + 1)).slice(-2) + '-' +
-					('0' + value.getDate()).slice(-2);
-		} catch (ignore) {}
+				('0' + (value.getMonth() + 1)).slice(-2) + '-' +
+				('0' + value.getDate()).slice(-2);
+		} catch (ignore) { }
 
 		return '';
 	}
@@ -180,8 +180,8 @@ class Values {
 			}
 
 			return ('0' + value.getHours()).slice(-2) + ':' +
-					('0' + value.getMinutes()).slice(-2);
-		} catch (ignore) {}
+				('0' + value.getMinutes()).slice(-2);
+		} catch (ignore) { }
 
 		return '';
 	}
@@ -193,11 +193,11 @@ class Values {
 			}
 
 			return '' + value.getFullYear() + '-' +
-					('0' + (value.getMonth() + 1)).slice(-2) + '-' +
-					('0' + value.getDate()).slice(-2) + 'T' +
-					('0' + value.getHours()).slice(-2) + ':' +
-					('0' + value.getMinutes()).slice(-2);
-		} catch (ignore) {}
+				('0' + (value.getMonth() + 1)).slice(-2) + '-' +
+				('0' + value.getDate()).slice(-2) + 'T' +
+				('0' + value.getHours()).slice(-2) + ':' +
+				('0' + value.getMinutes()).slice(-2);
+		} catch (ignore) { }
 
 		return '';
 	}
@@ -207,7 +207,7 @@ class Values {
 			return defaultValue;
 		}
 
-		value = JSON.parse(JSON.stringify(value));
+		value = structuredClone(value);
 		if (value != undefined) {
 			return value;
 		}
@@ -218,29 +218,29 @@ class Values {
 
 class VModels {
 	static toValue(vNode, v) {
-		if (vNode.vModelModifiers.indexOf('number') != -1) {
+		if (vNode.vModelModifiers.includes('number')) {
 			return Values.toNumber(v);
 		}
-		if (vNode.vModelModifiers.indexOf('date') != -1 || vNode.vModelModifiers.indexOf('datetime') != -1) {
+		if (vNode.vModelModifiers.includes('date') || vNode.vModelModifiers.includes('datetime')) {
 			return Values.toDate(v);
 		}
-		if (vNode.vModelModifiers.indexOf('time') != -1) {
+		if (vNode.vModelModifiers.includes('time')) {
 			return Values.toDate('1970-01-01T' + v);
 		}
-		if (vNode.vModelModifiers.indexOf('boolean') != -1) {
+		if (vNode.vModelModifiers.includes('boolean')) {
 			return Values.toBoolean(v);
 		}
 		return Values.toString(v);
 	}
 
 	static toString(vNode, v) {
-		if (vNode.vModelModifiers.indexOf('date') != -1) {
+		if (vNode.vModelModifiers.includes('date')) {
 			return Values.toISODateString(v);
 		}
-		if (vNode.vModelModifiers.indexOf('time') != -1) {
+		if (vNode.vModelModifiers.includes('time')) {
 			return Values.toISOTimeString(v);
 		}
-		if (vNode.vModelModifiers.indexOf('datetime') != -1) {
+		if (vNode.vModelModifiers.includes('datetime')) {
 			return Values.toISODateTimeString(v);
 		}
 		return Values.toString(v);
@@ -476,13 +476,13 @@ class VEventHandler {
 
 	get isLifecycleEvent() {
 		let vEventHandler = this;
-		return (vEventHandler.lifecycleEvents.indexOf(vEventHandler.type) != -1);
+		return (vEventHandler.lifecycleEvents.includes(vEventHandler.type));
 	}
 
 	register(vNode) {
 		let vEventHandler = this;
 		vEventHandler.$vNode = vNode;
-		vEventHandler.$eventListener = async function(event) {
+		vEventHandler.$eventListener = function(event) {
 			let vApp = vEventHandler.$vNode.$vApp;
 			let bindings = {
 				event: event,
@@ -918,7 +918,7 @@ class VNode {
 
 		if (vNode.$nodeName.toLowerCase() == 'input') {
 			let type = Values.toString(vNode.$node.type, '').toLowerCase();
-			if (['checkbox'].indexOf(type) != -1) {
+			if (['checkbox'].includes(type)) {
 				newValue = Values.clone(oldValue);
 				if (newValue == undefined) {
 					newValue = [];
@@ -981,7 +981,7 @@ class VNode {
 
 			let vComponentAttr, vComponentValue;
 			let vTemplateAttr, vTemplateValue;
-			let vPropertiesAttr, vPropertiesValue;
+			let vPropertiesValue;
 			for (const [name, value] of Object.entries(vNode.$attributes)) {
 				if (name == 'v-component' || name.startsWith('v-component.')) {
 					vComponentAttr = Values.trim(name).split('.');
@@ -994,14 +994,13 @@ class VNode {
 					continue;
 				}
 				if (name == 'v-properties' || name.startsWith('v-properties.')) {
-					vPropertiesAttr = Values.trim(name).split('.');
 					vPropertiesValue = Values.trim(value);
 					continue;
 				}
 			}
 
 			// id
-			if (vComponentAttr.indexOf('static') != -1) {
+			if (vComponentAttr.includes('static')) {
 				vNode.$componentID = vComponentValue;
 			} else {
 				vNode.$componentID = vApp.eval(vComponentValue, vNode.$bindings);
@@ -1011,7 +1010,7 @@ class VNode {
 
 			// template
 			if (vTemplateAttr != undefined) {
-				if (vTemplateAttr.indexOf('static') != -1) {
+				if (vTemplateAttr.includes('static')) {
 					vNode.$templateID = vTemplateValue;
 				} else {
 					vNode.$templateID = vApp.eval(vTemplateValue, vNode.$bindings);
@@ -1141,18 +1140,18 @@ class VNode {
 			if (vNode.hasVModel || vNode.$nodeName.toLowerCase() == 'option') {
 				if (vNode.$nodeName.toLowerCase() == 'input') {
 					let type = Values.toString(vNode.$node.type, '').toLowerCase();
-					if (['checkbox'].indexOf(type) != -1) {
+					if (['checkbox'].includes(type)) {
 						let values = getValueByPath(vApp, vNode.vModel);
 						if (values == undefined) {
 							values = [];
 						} else if (!Array.isArray(values)) {
 							values = [values];
 						}
-						let newValue = (values.indexOf(VModels.toValue(vNode, vNode.$node.value)) != -1);
+						let newValue = (values.includes(VModels.toValue(vNode, vNode.$node.value)));
 						if (vNode.$node.checked != newValue) {
 							vNode.$node.checked = newValue;
 						}
-					} else if (['radio'].indexOf(type) != -1) {
+					} else if (['radio'].includes(type)) {
 						let newValue = (getValueByPath(vApp, vNode.vModel) == VModels.toValue(vNode, vNode.$node.value));
 						if (vNode.$node.checked != newValue) {
 							vNode.$node.checked = newValue;
@@ -1180,7 +1179,7 @@ class VNode {
 							} else if (!Array.isArray(values)) {
 								values = [values];
 							}
-							let newValue = (values.indexOf(VModels.toValue(vNode, vNode.$node.value)) != -1);
+							let newValue = (values.includes(VModels.toValue(vNode, vNode.$node.value)));
 							if (vNode.$node.selected != newValue) {
 								vNode.$node.selected = newValue;
 							}
@@ -1260,7 +1259,7 @@ class VNode {
 
 					let isActive = false;
 					if (!vRenderContext.ifStatus.condition) {
-						if (['v-if', 'v-else-if'].indexOf(executed) != -1) {
+						if (['v-if', 'v-else-if'].includes(executed)) {
 							isActive = Values.toBoolean(vApp.eval(expression, bindings), false);
 						} else {
 							isActive = true;
@@ -1268,7 +1267,7 @@ class VNode {
 					}
 
 					if (!vRenderContext.ifStatus.condition) {
-						if (['v-if', 'v-else-if'].indexOf(executed) != -1) {
+						if (['v-if', 'v-else-if'].includes(executed)) {
 							if (isActive) {
 								vRenderContext.ifStatus.markTruthy(executed);
 							} else {
@@ -1384,7 +1383,7 @@ class VNode {
 
 			let isActive = false;
 			if (!vRenderContext.ifStatus.condition) {
-				if (['v-if', 'v-else-if'].indexOf(executed) != -1) {
+				if (['v-if', 'v-else-if'].includes(executed)) {
 					isActive = Values.toBoolean(vApp.eval(expression, vNode.$bindings), false);
 				} else {
 					isActive = true;
@@ -1433,7 +1432,7 @@ class VNode {
 			}
 
 			if (!vRenderContext.ifStatus.condition) {
-				if (['v-if', 'v-else-if'].indexOf(executed) != -1) {
+				if (['v-if', 'v-else-if'].includes(executed)) {
 					if (isActive) {
 						vRenderContext.ifStatus.markTruthy(executed);
 					} else {
@@ -1456,7 +1455,7 @@ class VNode {
 		}
 
 		let template = vNode.$template;
-		if (['thead', 'tbody', 'tr', 'th', 'td'].indexOf(Values.toString(vNode.$templateNodeName, '').toLowerCase()) != -1) {
+		if (['thead', 'tbody', 'tr', 'th', 'td'].includes(Values.toString(vNode.$templateNodeName, '').toLowerCase())) {
 			template = '<table>' + template + '</table>';
 		}
 		const fragment = document.createRange().createContextualFragment(template);
@@ -1639,6 +1638,10 @@ class VApp {
 		let vApp = this;
 		if (typeof vApp.$instance.computed == 'object') {
 			for (const [name, func] of Object.entries(vApp.$instance.computed)) {
+				if (typeof func != 'function') {
+					continue;
+				}
+
 				vApp[name] = func.call(vApp);
 			}
 		}
@@ -1678,7 +1681,7 @@ class VApp {
 
 			if (bindings) {
 				for (const [name, value] of Object.entries(bindings)) {
-					if (names.indexOf(name) != -1) {
+					if (names.includes(name)) {
 						continue;
 					}
 
@@ -1687,18 +1690,9 @@ class VApp {
 				}
 			}
 
-			for (const [name, value] of Object.entries(vApp.$state.data)) {
-				if (names.indexOf(name) != -1) {
-					continue;
-				}
-
-				names.push(name);
-				values.push(value);
-			}
-
 			if (typeof vApp.$instance.methods == 'object') {
 				for (const [name, value] of Object.entries(vApp.$instance.methods)) {
-					if (names.indexOf(name) != -1) {
+					if (names.includes(name)) {
 						continue;
 					}
 					if (typeof value != 'function') {
@@ -1710,31 +1704,41 @@ class VApp {
 				}
 			}
 
-			if (updatable) {
-				const $update = function() {
-					const ignores = bindings ? Object.keys(bindings) : [];
-					for (let i = 0; i < names.length; i++) {
-						if (ignores.indexOf(names[i]) != -1) {
-							continue;
-						}
-						if (typeof arguments[i] == 'function') {
-							continue;
+			let vAppProxy = new Proxy(vApp, {
+				get(target, prop) {
+					if (typeof prop == 'string') {
+						if (prop.startsWith('$')) {
+							throw Error("Cannot access to " + prop);
 						}
 
-						vApp[names[i]] = arguments[i];
+						if (typeof target[prop] == 'function') {
+							throw Error("Cannot access to " + prop);
+						}
 					}
-				};
-				names.push('$update');
-				values.push($update);
-			}
+
+					return target[prop];
+				},
+				set(target, prop, value) {
+					if (typeof prop == 'string') {
+						if (prop.startsWith('$')) {
+							throw Error("Cannot access to " + prop);
+						}
+
+						if (typeof target[prop] == 'function') {
+							throw Error("Cannot access to " + prop);
+						}
+					}
+
+					target[prop] = value;
+					return true;
+				}
+			});
 
 			let source = '';
 			if (updatable) {
-				source += 'return (' + expression + ');';
-//				source += '{' + expression + '}';
-//				source += '{$update(' + names.join(',') + ')}';
+				source += 'with(this) {return (' + expression + ')}';
 			} else {
-				source += 'return (' + expression + ');';
+				source += 'with(this) {return (' + expression + ')}';
 			}
 
 			let fn;
@@ -1746,7 +1750,7 @@ class VApp {
 			}
 
 			try {
-				return fn.apply(vApp, values);
+				return fn.apply(vAppProxy, values);
 			} catch (ex) {
 				vApp.log.error("Script execution failed: " + ex.message);
 				throw ex;
@@ -1805,6 +1809,19 @@ class VComponent {
 }
 
 export class VDOM {
+	static get isSupported() {
+		try {
+			if (typeof structuredClone !== 'function') return false;
+
+			// if (typeof crypto.randomUUID !== 'function') return false;
+			// if (!Array.prototype.at) return false;
+
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
 	static createApp(selectors, instance) {
 		let vComponent;
 		if (typeof instance == 'string') {

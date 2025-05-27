@@ -26,7 +26,7 @@
 		</div>
 
 		<script type="module">
-			import { VDOM } from './vdom.min.js';
+			import { VDOM } from './vdom.js';
 
 			const App = {
 				data() {
@@ -42,6 +42,7 @@
 						alert('navigation was prevented.');
 					},
 				},
+				logLevel: 'debug',
 			};
 
 			VDOM.createApp('#app', App);

@@ -18,7 +18,7 @@
 		</div>
 
 		<script type="module">
-			import { VDOM } from './vdom.min.js';
+			import { VDOM } from './vdom.js';
 
 			const App = {
 				data() {
@@ -27,6 +27,7 @@
 						list: [1, 2, 3],
 					};
 				},
+				logLevel: 'debug',
 			};
 
 			VDOM.createApp('#app', App);

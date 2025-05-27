@@ -26,7 +26,7 @@
 		</div>
 
 		<script type="module">
-			import { VDOM } from './vdom.min.js';
+			import { VDOM } from './vdom.js';
 
 			const App = {
 				data() {
@@ -44,6 +44,7 @@
 						this.color = (this.color === 'green') ? 'blue' : 'green';
 					},
 				},
+				logLevel: 'debug',
 			};
 
 			VDOM.createApp('#app', App);
