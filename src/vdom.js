@@ -1704,36 +1704,6 @@ class VApp {
 				}
 			}
 
-			let vAppProxy = new Proxy(vApp, {
-				get(target, prop) {
-					if (typeof prop == 'string') {
-						if (prop.startsWith('$')) {
-							throw Error("Cannot access to " + prop);
-						}
-
-						if (typeof target[prop] == 'function') {
-							throw Error("Cannot access to " + prop);
-						}
-					}
-
-					return target[prop];
-				},
-				set(target, prop, value) {
-					if (typeof prop == 'string') {
-						if (prop.startsWith('$')) {
-							throw Error("Cannot access to " + prop);
-						}
-
-						if (typeof target[prop] == 'function') {
-							throw Error("Cannot access to " + prop);
-						}
-					}
-
-					target[prop] = value;
-					return true;
-				}
-			});
-
 			let source = '';
 			if (updatable) {
 				source += 'with(this) {return (' + expression + ')}';
@@ -1750,7 +1720,7 @@ class VApp {
 			}
 
 			try {
-				return fn.apply(vAppProxy, values);
+				return fn.apply(vApp, values);
 			} catch (ex) {
 				vApp.log.error("Script execution failed: " + ex.message);
 				throw ex;
