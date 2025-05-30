@@ -799,7 +799,7 @@ class VNode {
 					result = vApp.$instance.methods[expression];
 				}
 				if (typeof result != 'function') {
-					result = vApp.eval(expression, vNode.$bindings, true);
+					result = vApp.eval(expression, {...vNode.$bindings, vNode}, true);
 				}
 				if (typeof result == 'function') {
 					try {
