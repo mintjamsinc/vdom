@@ -1556,7 +1556,7 @@ class VApp {
 
 	get keyupDelayTime() {
 		let vApp = this;
-		return Values.toNumber(vApp.$instance.keyupDelayTime, 400);
+		return Values.toNumber(vApp.$instance.keyupDelayTime, 0);
 	}
 
 	get logLevel() {
