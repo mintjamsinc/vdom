@@ -550,7 +550,7 @@ class VNode {
 		vNode.$isReactive = false;
 		vNode.$isComponent = false;
 		vNode.$vApp = vApp;
-		vNode.$bindings = bindings ? Values.clone(bindings) : {};
+		vNode.$bindings = bindings ? bindings : {};
 
 		if (vNode.$node.nodeType == Node.ELEMENT_NODE) {
 			vNode.$nodeName = vNode.$node.nodeName;
