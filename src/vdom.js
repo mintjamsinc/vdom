@@ -616,14 +616,14 @@ class VNode {
 						continue;
 					}
 
-					if (name.startsWith('v-')) {
-						vNode.$node.removeAttribute(name);
-						continue;
-					}
-
 					if (name == 'v-component' || name.startsWith('v-component.')) {
 						vNode.$isComponent = true;
 						vNode.$isActivated = false;
+						continue;
+					}
+
+					if (name.startsWith('v-')) {
+						vNode.$node.removeAttribute(name);
 						continue;
 					}
 				}
