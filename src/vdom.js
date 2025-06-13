@@ -1109,14 +1109,46 @@ class VNode {
 						}
 
 						if (name == 'style') {
-							if (typeof newValue != 'object') {
+							let result;
+							if (typeof newValue == 'object') {
+								result = newValue;
+							} else {
+								if (typeof vApp.$instance.methods == 'object') {
+									result = vApp.$instance.methods[newValue];
+								}
+								if (typeof result != 'function') {
+									result = vApp.eval(newValue, {vNode}, false);
+								}
+								if (typeof result == 'function') {
+									try {
+										result = result.apply(vApp, [vNode]);
+									} catch (ex) {
+										vApp.log.error(ex);
+									}
+								}
+							}
+							if (typeof result != 'object') {
 								continue;
 							}
 
 							const style = vNode.$node.style;
-							for (const [name, value] of Object.entries(newValue)) {
-								if (style[name] != value) {
-									style[name] = value;
+							for (const [name, value] of Object.entries(result)) {
+								if (name.includes('-')) {
+									if (value == undefined) {
+										style.removeProperty(name);
+										continue;
+									}
+									if (style.getPropertyValue(name) != value) {
+										style.setProperty(name, value);
+									}
+								} else {
+									if (value == undefined) {
+										style[name] = '';
+										continue;
+									}
+									if (style[name] != value) {
+										style[name] = value;
+									}
 								}
 							}
 							continue;
