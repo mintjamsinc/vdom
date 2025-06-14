@@ -1297,7 +1297,7 @@ class VNode {
 					let isActive = false;
 					if (!vRenderContext.ifStatus.condition) {
 						if (['v-if', 'v-else-if'].includes(executed)) {
-							isActive = Values.toBoolean(vApp.eval(expression, bindings), false);
+							isActive = Values.toBoolean(!!vApp.eval(expression, bindings), false);
 						} else {
 							isActive = true;
 						}
@@ -1421,7 +1421,7 @@ class VNode {
 			let isActive = false;
 			if (!vRenderContext.ifStatus.condition) {
 				if (['v-if', 'v-else-if'].includes(executed)) {
-					isActive = Values.toBoolean(vApp.eval(expression, vNode.$bindings), false);
+					isActive = Values.toBoolean(!!vApp.eval(expression, vNode.$bindings), false);
 				} else {
 					isActive = true;
 				}
