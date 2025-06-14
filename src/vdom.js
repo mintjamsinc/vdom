@@ -1510,7 +1510,7 @@ class VNode {
 
 		if (vNode.isComponent) {
 			if (vNode.$isActivated) {
-				vNode.$vApp.remove();
+				vNode.$componentVApp.remove();
 			}
 		} else {
 			vNode.unbind();
