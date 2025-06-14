@@ -542,6 +542,8 @@ class VEventHandler {
 }
 
 class VNode {
+	#styles;
+
 	constructor({ node, parentVNode, vApp, bindings }) {
 		let vNode = this;
 		vNode.$node = node;
@@ -804,7 +806,7 @@ class VNode {
 					result = vApp.$instance.methods[expression];
 				}
 				if (typeof result != 'function') {
-					result = vApp.eval(expression, {...vNode.$bindings, vNode}, true);
+					result = vApp.eval(expression, { ...vNode.$bindings, vNode }, true);
 				}
 				if (typeof result == 'function') {
 					try {
@@ -1117,7 +1119,7 @@ class VNode {
 									result = vApp.$instance.methods[newValue];
 								}
 								if (typeof result != 'function') {
-									result = vApp.eval(newValue, {vNode}, false);
+									result = vApp.eval(newValue, { vNode }, false);
 								}
 								if (typeof result == 'function') {
 									try {
@@ -1131,8 +1133,19 @@ class VNode {
 								continue;
 							}
 
+							const oldStyles = vNode.#styles || {};
+							const newStyles = result;
 							const style = vNode.$node.style;
-							for (const [name, value] of Object.entries(result)) {
+							for (const name in oldStyles) {
+								if (!(name in newStyles)) {
+									if (name.includes('-')) {
+										style.removeProperty(name);
+									} else {
+										style[name] = '';
+									}
+								}
+							}
+							for (const [name, value] of Object.entries(newStyles)) {
 								if (name.includes('-')) {
 									if (value == undefined) {
 										style.removeProperty(name);
@@ -1151,6 +1164,7 @@ class VNode {
 									}
 								}
 							}
+							vNode.#styles = newStyles;
 							continue;
 						}
 
