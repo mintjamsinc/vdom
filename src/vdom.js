@@ -653,7 +653,7 @@ class VNode {
 			}
 		} else if (vNode.$node.nodeType == Node.TEXT_NODE) {
 			vNode.$nodeValue = vNode.$node.nodeValue;
-			if (/{{.*?}}/.test(vNode.$node.nodeValue)) {
+			if (/{{.*?}}/s.test(vNode.$nodeValue)) {
 				vNode.$isReactive = true;
 			}
 		} else {
@@ -1175,7 +1175,7 @@ class VNode {
 				}
 			} else if (vNode.$nodeType == Node.TEXT_NODE) {
 				if (vNode.$parentVNode.$nodeName.toLowerCase() != 'textarea') {
-					let newValue = vNode.$nodeValue.replaceAll(/{{.*?}}/g, function(exp) {
+					let newValue = vNode.$nodeValue.replaceAll(/{{.*?}}/gs, function(exp) {
 						return Values.toString(vApp.eval(exp.substring(2, exp.length - 2), vNode.$bindings), '');
 					});
 					if (vNode.$node.nodeValue != newValue) {
