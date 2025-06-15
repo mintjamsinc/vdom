@@ -1583,7 +1583,7 @@ class VApp {
 	constructor(node, instance) {
 		let vApp = this;
 		vApp.$log = new VLog(vApp);
-		vApp.$node = node;
+		vApp.$node = VDOM.getCleanedElement(node);
 		vApp.$instance = instance;
 		vApp.$state = {
 			names: [],
@@ -1883,5 +1883,34 @@ export class VDOM {
 
 	static removeComponent(id) {
 		delete vComponents[id];
+	}
+
+	static getCleanedElement(element) {
+		const childNodes = Array.from(element.childNodes);
+		let buffer = null;
+
+		for (let i = 0; i < childNodes.length; i++) {
+			const node = childNodes[i];
+
+			if (node.nodeType === Node.TEXT_NODE) {
+				if (/^[\s\n\r\t]*$/.test(node.nodeValue)) {
+					element.removeChild(node);
+				} else {
+					if (buffer) {
+						buffer.nodeValue += node.nodeValue;
+						element.removeChild(node);
+					} else {
+						buffer = node;
+					}
+				}
+			} else {
+				buffer = null;
+				if (node.nodeType === Node.ELEMENT_NODE) {
+					VDOM.getCleanedElement(node);
+				}
+			}
+		}
+
+		return element;
 	}
 }
