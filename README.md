@@ -11,6 +11,7 @@
 * Dynamic attribute, class, and style bindings: `:class`, `:style`, `:title`, etc.
 * Component system: separate template and logic for reusability
 * App instance logic: `data`, `methods`, `computed`
+* Lifecycle hooks: `@bind`, `@bound`, `@unbind`, `@unbound`
 
 ## 🚀 Getting Started
 
