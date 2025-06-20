@@ -94,9 +94,30 @@ VDOM.addComponent({
 
 ## 🔨 Build
 
-Run `npm install` and `npm run build` to compile the TypeScript source using
-`tsc` and generate `dist/vdom.js`. A minified bundle is also produced via
-`esbuild` at `dist/vdom.min.js`.
+Run `npm install` and `npm run build` to compile the TypeScript source from `src/index.ts`. This generates:
+
+- Type declaration: `dist-types/index.d.ts`
+- Regular bundle: `dist/vdom.js`
+- Minified bundle: `dist/vdom.min.js`
+
+The minified version is optimized for use via `<script>` tags as `window.VDOM`.
+
+### 💡 Usage via `<script>`
+
+```html
+<script src="dist/vdom.min.js"></script>
+<script>
+  VDOM.createApp('#app', { /* ... */ });
+</script>
+```
+
+### 📦 Usage via ESM
+
+```js
+import { createApp } from 'vdom';
+```
+
+> Note: ESM usage assumes you've installed via npm and are bundling using your own tool (e.g., Vite, Webpack).
 
 ## 📜 License
 

@@ -1,13 +1,28 @@
 {
 	"name": "vdom",
 	"version": "1.0.0",
-	"license": "MIT",
 	"type": "module",
+	"main": "./dist/vdom.js",
+	"module": "./dist/vdom.js",
+	"types": "./dist-types/index.d.ts",
+	"files": [
+		"dist/",
+		"dist-types/"
+	],
 	"scripts": {
-		"build": "tsc && esbuild dist/vdom.js --minify --outfile=dist/vdom.min.js"
+		"build": "tsc && node ./scripts/build.js",
+		"prepare": "npm run build",
+		"test": "npm run build && node --test"
 	},
 	"devDependencies": {
-		"esbuild": "^0.20.2",
-		"typescript": "^5.4.0"
+		"esbuild": "^0.21.5",
+		"typescript": "^5.2.2"
+	},
+	"exports": {
+		".": {
+			"import": "./dist/vdom.js",
+			"require": "./dist/vdom.js",
+			"types": "./dist-types/index.d.ts"
+		}
 	}
 }
