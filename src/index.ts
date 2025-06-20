@@ -70,6 +70,45 @@ const setValueByPath = function(obj: any, path: string, value: any): void {
 	target[lastKey] = value;
 };
 
+const normalizeClass = function(value: any): string[] {
+	const result = [];
+
+	if (typeof value == 'object') {
+		for (const [names, cnd] of Object.entries(value)) {
+			if (cnd) {
+				result.push(...names.split(/\s+/));
+			}
+		}
+	} else if (typeof value == 'string') {
+		result.push(...value.split(/\s+/));
+	} else if (Array.isArray(value)) {
+		result.push(...value.flatMap(names => names.split(/\s+/)));
+	}
+
+	return result;
+}
+
+const normalizeStyle = function(value: any): any {
+	const result = {};
+
+	if (typeof value === 'string') {
+		value.split(';').forEach(part => {
+			const [key, val] = part.split(':').map(s => s && s.trim());
+			if (key && val) {
+				result[key] = val;
+			}
+		});
+	} else if (Array.isArray(value)) {
+		for (const obj of value) {
+			Object.assign(result, normalizeStyle(obj));
+		}
+	} else if (typeof value === 'object' && value !== null) {
+		Object.assign(result, value);
+	}
+
+	return result;
+};
+
 class Values {
 	static isNumber(value: any): value is number {
 		return (typeof value == 'number');
@@ -599,6 +638,7 @@ class VNode {
 	$vModelModifiers?: string[];
 	$updateListener?: () => void;
 	#styles;
+	#classes;
 
 	constructor({ node, parentVNode, vApp, bindings }: VNodeInit) {
 		let vNode = this;
@@ -1134,63 +1174,47 @@ class VNode {
 
 					if (vName.startsWith(':')) {
 						let name = vName.substring(1);
-						let newValue = vApp.eval(vNode.$attributes[vName], vNode.$bindings);
+						let newValue = vNode.$attributes[vName];
+						let result;
+						if (typeof vApp.$instance.methods == 'object') {
+							result = vApp.$instance.methods[newValue];
+						}
+						if (typeof result != 'function') {
+							result = vApp.eval(newValue, vNode.$bindings);
+						}
+						if (typeof result == 'function') {
+							try {
+								result = result.apply(vApp, [vNode]);
+							} catch (ex) {
+								vApp.log.error(ex);
+							}
+						}
+						newValue = result;
 
 						if (name == 'class') {
-							if (typeof newValue != 'object') {
-								continue;
-							}
+							const oldClasses: string[] = vNode.#classes || [];
+							const newClasses: string[] = normalizeClass(newValue);
 
-							let addList = [];
-							let removeList = [];
+							const oldSet = new Set(oldClasses);
+							const newSet = new Set(newClasses);
 							const classList = vNode.$node.classList;
-							for (const [names, value] of Object.entries(newValue)) {
-								for (const name of names.split(/\s/)) {
-									if (value) {
-										if (!classList.contains(name)) {
-											addList.push(name);
-										}
-									} else {
-										if (classList.contains(name)) {
-											removeList.push(name);
-										}
-									}
+							for (const name of oldSet) {
+								if (!newSet.has(name)) {
+									classList.remove(name);
 								}
 							}
-							if (removeList.length > 0) {
-								classList.remove(...removeList);
+							for (const name of newSet) {
+								if (!oldSet.has(name)) {
+									classList.add(name);
+								}
 							}
-							if (addList.length > 0) {
-								classList.add(...addList);
-							}
+							vNode.#classes = newClasses;
 							continue;
 						}
 
 						if (name == 'style') {
-							let result;
-							if (typeof newValue == 'object') {
-								result = newValue;
-							} else {
-								if (typeof vApp.$instance.methods == 'object') {
-									result = vApp.$instance.methods[newValue];
-								}
-								if (typeof result != 'function') {
-									result = vApp.eval(newValue, { vNode }, false);
-								}
-								if (typeof result == 'function') {
-									try {
-										result = result.apply(vApp, [vNode]);
-									} catch (ex) {
-										vApp.log.error(ex);
-									}
-								}
-							}
-							if (typeof result != 'object') {
-								continue;
-							}
-
 							const oldStyles = vNode.#styles || {};
-							const newStyles = result;
+							const newStyles = normalizeStyle(newValue);
 							const style = vNode.$node.style;
 							for (const name in oldStyles) {
 								if (!(name in newStyles)) {
