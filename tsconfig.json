@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ES2020",
+    "lib": ["ES2021", "DOM"],
+    "strict": false,
+    "skipLibCheck": true,
+    "outDir": "./",
+    "rootDir": "./src",
+    "declaration": false,
+    "sourceMap": false
+  },
+  "files": ["src/vdom.ts"]
+}

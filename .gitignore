@@ -105,3 +105,7 @@ dist
 
 # Project file
 .project
+
+# Build artifacts
+vdom.js
+vdom.min.js

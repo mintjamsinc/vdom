@@ -1,0 +1,13 @@
+{
+  "name": "vdom",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && terser vdom.js -o vdom.min.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "terser": "^5.26.0"
+  }
+}
