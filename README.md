@@ -31,7 +31,7 @@
 ### JavaScript Setup
 
 ```javascript
-import { VDOM } from './vdom.js';
+import { VDOM } from '../dist/vdom.js';
 
 VDOM.createApp('#app', {
   data() {
@@ -94,7 +94,7 @@ VDOM.addComponent({
 
 ## 🔨 Build
 
-Run `npm install` and `npm run build` to generate `vdom.js` and `vdom.min.js`.
+Run `npm install` and `npm run build` to generate `dist/vdom.js` and `dist/vdom.min.js`.
 
 ## 📜 License
 

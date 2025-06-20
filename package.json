@@ -4,10 +4,10 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "tsc && terser vdom.js -o vdom.min.js"
+    "build": "esbuild src/vdom.ts --bundle --format=esm --outfile=dist/vdom.js && esbuild src/vdom.ts --bundle --format=esm --minify --outfile=dist/vdom.min.js"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
-    "terser": "^5.26.0"
+    "esbuild": "^0.20.0"
   }
 }
