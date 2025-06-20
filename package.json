@@ -3,11 +3,11 @@
 	"version": "1.0.0",
 	"license": "MIT",
 	"type": "module",
-       "scripts": {
-               "build": "tsc && esbuild dist/vdom.js --minify --outfile=dist/vdom.min.js"
-       },
+	"scripts": {
+		"build": "tsc && esbuild dist/vdom.js --minify --outfile=dist/vdom.min.js"
+	},
 	"devDependencies": {
-		"typescript": "^5.4.0",
-		"esbuild": "^0.20.0"
+		"esbuild": "^0.20.2",
+		"typescript": "^5.4.0"
 	}
 }
