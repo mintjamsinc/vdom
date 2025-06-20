@@ -92,6 +92,10 @@ VDOM.addComponent({
 | `v-component="compId"`          | Component instantiation           |
 | `v-template="tmplId"`           | Dynamic template switching        |
 
+## 🔨 Build
+
+Run `npm install` and `npm run build` to generate `vdom.js` and `vdom.min.js`.
+
 ## 📜 License
 
 MIT License
