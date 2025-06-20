@@ -94,7 +94,9 @@ VDOM.addComponent({
 
 ## 🔨 Build
 
-Run `npm install` and `npm run build` to generate `dist/vdom.js` and `dist/vdom.min.js`.
+Run `npm install` and `npm run build` to compile the TypeScript source using
+`tsc` and generate `dist/vdom.js`. A minified bundle is also produced via
+`esbuild` at `dist/vdom.min.js`.
 
 ## 📜 License
 
