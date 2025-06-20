@@ -1,6 +1,6 @@
 {
 	"name": "vdom",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"type": "module",
 	"main": "./dist/vdom.js",
 	"module": "./dist/vdom.js",
