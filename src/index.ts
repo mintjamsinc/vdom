@@ -1078,7 +1078,7 @@ class VNode {
 
 		if (vNode.isComponent) {
 			if (vNode.$isActivated) {
-				vNode.$componentVApp.commit(vNode.$bindings);
+				vNode.$componentVApp.commit(false, vNode.$bindings);
 				return;
 			}
 
@@ -1872,7 +1872,7 @@ class VApp {
 		return undefined;
 	}
 
-	commit(bindings?: Bindings): void {
+	async commit(waitForPaint = false, bindings?: Bindings): Promise<void> {
 		let vApp = this;
 
 		if (typeof bindings == 'object') {
@@ -1883,6 +1883,10 @@ class VApp {
 
 		vApp.compute();
 		vApp.render();
+
+		if (waitForPaint) {
+			await new Promise(r => requestAnimationFrame(r));
+		}
 	}
 }
 
