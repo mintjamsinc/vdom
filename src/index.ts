@@ -73,7 +73,9 @@ const setValueByPath = function(obj: any, path: string, value: any): void {
 const normalizeClass = function(value: any): string[] {
 	const result = [];
 
-	if (typeof value == 'object') {
+	if (Array.isArray(value)) {
+		result.push(...value);
+	} else if (typeof value == 'object') {
 		for (const [names, cnd] of Object.entries(value)) {
 			if (cnd) {
 				result.push(...names.split(/\s+/));
