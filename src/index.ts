@@ -618,6 +618,7 @@ class VNode {
 	$node!: any;
 	$parentVNode?: VNode;
 	$nodeType!: number;
+	$keyupListener?: (event: KeyboardEvent) => void;
 	$isReactive!: boolean;
 	$isComponent!: boolean;
 	$vApp!: VApp;
@@ -955,10 +956,12 @@ class VNode {
 
 			if (vNode.$nodeName.toLowerCase() == 'input') {
 				vNode.$node.addEventListener('change', vNode.$updateListener);
-				vNode.$node.addEventListener('keyup', delay(vNode.$updateListener, vApp.keyupDelayTime));
+				vNode.$keyupListener = delay(vNode.$updateListener, vApp.keyupDelayTime);
+				vNode.$node.addEventListener('keyup', vNode.$keyupListener);
 			} else if (vNode.$nodeName.toLowerCase() == 'textarea') {
 				vNode.$node.addEventListener('change', vNode.$updateListener);
-				vNode.$node.addEventListener('keyup', delay(vNode.$updateListener, vApp.keyupDelayTime));
+				vNode.$keyupListener = delay(vNode.$updateListener, vApp.keyupDelayTime);
+				vNode.$node.addEventListener('keyup', vNode.$keyupListener);
 			} else if (vNode.$nodeName.toLowerCase() == 'select') {
 				vNode.$node.addEventListener('change', vNode.$updateListener);
 			}
@@ -1003,7 +1006,10 @@ class VNode {
 
 		if (vNode.$updateListener != undefined) {
 			vNode.$node.removeEventListener('change', vNode.$updateListener);
-			vNode.$node.removeEventListener('keyup', delay);
+			if (vNode.$keyupListener) {
+				vNode.$node.removeEventListener('keyup', vNode.$keyupListener);
+				vNode.$keyupListener = undefined;
+			}
 			vNode.$updateListener = undefined;
 		}
 
